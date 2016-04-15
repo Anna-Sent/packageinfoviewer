@@ -1,46 +1,38 @@
 package com.anna.sent.soft.packageinfoviewer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.ListView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements TextWatcher {
+	private List<PackageInfo> mPackages = new ArrayList<PackageInfo>();
+	private ListView mListView;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		StringBuilder sb = new StringBuilder();
-
 		PackageManager packageManager = getPackageManager();
-		List<PackageInfo> packages = packageManager
+		mPackages = packageManager
 				.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES
 						| PackageManager.GET_ACTIVITIES);
-		for (int i = 0; i < packages.size(); ++i) {
-			PackageInfo packageInfo = packages.get(i);
-			sb.append(i + " " + packageInfo.packageName);
-			sb.append("\n");
 
-			if (packageInfo.activities != null) {
-				for (int j = 0; j < packageInfo.activities.length; ++j) {
-					ActivityInfo activityInfo = packageInfo.activities[j];
-					sb.append("\t" + i + "." + j + " " + activityInfo.name);
-					sb.append("\n");
-				}
-			}
+		mListView = (ListView) findViewById(R.id.listView);
+		mListView.setAdapter(new PackagesArrayAdapter(this, mPackages));
 
-			sb.append("\n");
-		}
-
-		TextView tv = (TextView) findViewById(R.id.textView);
-		tv.setText(sb.toString());
+		EditText editText = (EditText) findViewById(R.id.editText);
+		editText.addTextChangedListener(this);
 	}
 
 	@Override
@@ -61,5 +53,33 @@ public class MainActivity extends Activity {
 		}
 
 		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count,
+			int after) {
+	}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+	}
+
+	@Override
+	public void afterTextChanged(Editable s) {
+		String filter = s.toString();
+
+		if (s.length() == 0) {
+			mListView.setAdapter(new PackagesArrayAdapter(this, mPackages));
+		} else {
+			List<PackageInfo> packages = new ArrayList<PackageInfo>();
+			for (int i = 0; i < mPackages.size(); ++i) {
+				PackageInfo packageInfo = mPackages.get(i);
+				if (packageInfo.packageName.contains(filter)) {
+					packages.add(packageInfo);
+				}
+			}
+
+			mListView.setAdapter(new PackagesArrayAdapter(this, packages));
+		}
 	}
 }
